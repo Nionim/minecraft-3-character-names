@@ -147,9 +147,10 @@
                     (swap! all-available-soon conj soon-name))
                 (Thread/sleep rateLimit2)))
         (println "Total available soon names: " (count @all-available-soon))
-        (save-all-files (sort @all-available) (sort @all-available-soon)))
+        (save-all-files (sort @all-available) (sort @all-available-soon))
     )
 )
+
 
 ;; --==[ The End lol ]==--
 (if (= *file* (System/getProperty "babashka.file"))
