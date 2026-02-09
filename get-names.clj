@@ -86,8 +86,9 @@
         (let [conn (api-request "GET" nil (str apiAvailableSoonURL name))] (read-response conn) nil)
         (catch Exception e 
             (if (str/includes? (.getMessage e) "HTTP Error: 204")
-                (println "Available soon: " name)
-                name (do (sleep-ms sleepingTime) nil)))))
+                (do (println "Found available soon name: " name) name) 
+                (do (println "Cannot parse available soon-name: " (.getMessage e))
+                  (sleep-ms sleepingTime) nil)))))
 
 ;; --==[ Save to files ]==--
 (defn ensure-dir [dir]
