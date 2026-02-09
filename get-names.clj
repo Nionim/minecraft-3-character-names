@@ -38,8 +38,9 @@
 (def all-chars (apply str characters))
 (def possible-names 
     (for [a all-chars b all-chars c all-chars] 
-    (str a b c))
-)
+    (str a b c)))
+
+(println "Total possible names:" (count possible-names))
 
 ;; --==[ Timer ]==--
 (defn sleep-ms [ms]
@@ -47,6 +48,7 @@
 
 ;; --==[ Request ]==--
 (defn api-request [method body api]
+    (println "Request to: " api "\nMethod:" method)
     (let [conn (.openConnection (URL. api))]
         (doto conn
             (.setRequestMethod method)
@@ -61,6 +63,7 @@
 
 (defn read-response [conn]
   (let [status (.getResponseCode conn)]
+    (println "Response: " status)
     (if (= status 200)
       (let [stream (.getInputStream conn)
             content (slurp stream)]
@@ -71,6 +74,7 @@
 ;; --==[ Parse available names ]==--
 (defn parse-available-names [names-batch]
     (try
+        (println "Batched names: " (count names-batch))
         (let [conn (api-request "POST" (json/write-str names-batch) apiAvailableURL)
               response (read-response conn)]
             (map :name (json/read-str response :key-fn keyword)))
@@ -82,6 +86,7 @@
         (let [conn (api-request "GET" nil (str apiAvailableSoonURL name))] (read-response conn) nil)
         (catch Exception e 
             (if (str/includes? (.getMessage e) "HTTP Error: 204")
+                (println "Available soon: " name)
                 name (do (sleep-ms sleepingTime) nil)))))
 
 ;; --==[ Save to files ]==--
@@ -92,11 +97,14 @@
 
 (defn save-to-file [names filename]
     (when (seq names)
+        (println "Saving " (count names) " names in: " filename)
         (with-open [writer (java.io.FileWriter. filename)]
             (doseq [name names]
                 (.write writer (str name "\n"))))))
 
 (defn save-all-files [available-names available-soon-names]
+    (println "Available found: " (count available-names))
+    (println "Available soon found: " (count available-soon-names))
     (ensure-dir dirForNames)
     (ensure-dir dirWithoutNumbers)
     
@@ -106,6 +114,8 @@
     (let [without-numbers? (fn [name] (not-any? #(Character/isDigit %) name))
           available-wo-numbers (filter without-numbers? available-names)
           soon-wo-numbers (filter without-numbers? available-soon-names)]
+          (println "Available without numbers: " (count available-wo-numbers))
+          (println "Available soon without numbers: " (count soon-wo-numbers))
         (save-to-file available-wo-numbers (str dirWithoutNumbers availableFile))
         (save-to-file soon-wo-numbers (str dirWithoutNumbers availableSoonFile))
     )
@@ -117,24 +127,30 @@
           all-available (atom [])
           all-available-soon (atom [])
           total-batches (count batches)]
+          (println "Batches: " total-batches)
         
         (doseq [[idx batch] (map-indexed vector batches)]
             (let [available (parse-available-names batch)]
                 (swap! all-available concat available)
                 (Thread/sleep rateLimit)))
+        (println "Available names found: " (count @all-available))
         
         ;; Check remaining names for available-soon status
         (let [checked-names (set @all-available)
               remaining-names (remove checked-names possible-names)]
+            (println "Remaining names: " (count remaining-names))
             (doseq [[idx name] (map-indexed vector remaining-names)]
                 (when (zero? (mod idx 100))
+                (println "Checked" idx " / " (count remaining-names) " names!"))
                 (when-let [soon-name (parse-available-soon-name name)]
                     (swap! all-available-soon conj soon-name))
                 (Thread/sleep rateLimit2)))
+        (println "Total available soon names: " (count @all-available-soon))
         (save-all-files (sort @all-available) (sort @all-available-soon)))
     )
 )
 
 ;; --==[ The End lol ]==--
 (if (= *file* (System/getProperty "babashka.file"))
+    (println "Check started!")
     (-main))
