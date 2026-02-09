@@ -1,0 +1,49 @@
+name: Check 3 charter names
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  update-names:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        repository: Delta-Factory/minecraft-3-character-names
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+
+    - name: Setup Clojure
+      uses: DeLaGuardo/setup-clojure@10.2
+      with:
+        cli: 'latest'
+
+    - name: Make script executable
+      run: chmod +x ./get-names.clj
+
+    - name: Run name checker
+      run: clojure -M get-names.clj
+      env:
+        SLEEP_TIME: 1000
+      timeout-minutes: 120
+
+    - name: Commit and push if changed
+      run: |
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email 'actions@github.com'
+        git add -A
+        timestamp=$(date -u)
+        git commit -m "Update available names: ${timestamp}" || echo "No changes to commit"
+        git push
