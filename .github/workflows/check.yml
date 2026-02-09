@@ -16,7 +16,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        repository: Delta-Factory/minecraft-3-character-names
+        repository: Nionim/minecraft-3-character-names
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Java
