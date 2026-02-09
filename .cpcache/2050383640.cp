@@ -1,0 +1,1 @@
+src:/home/runner/.m2/repository/org/clojure/clojure/1.12.4/clojure-1.12.4.jar:/home/runner/.m2/repository/org/clojure/data.json/2.4.0/data.json-2.4.0.jar:/home/runner/.m2/repository/org/clojure/core.specs.alpha/0.4.74/core.specs.alpha-0.4.74.jar:/home/runner/.m2/repository/org/clojure/spec.alpha/0.5.238/spec.alpha-0.5.238.jar
